@@ -10,6 +10,27 @@ logging.debug("Connecting to PostgreSQL")
 connection = psycopg2.connect("dbname='snippets' user='action' host='localhost'")
 logging.debug("Database connection established.")
 
+def catalog():
+    logging.info("fetching catalog")
+    command = "select keyword from snippets order by keyword"
+    with connection, connection.cursor() as cursor:
+        cursor.execute(command)
+        keywords = cursor.fetchall()
+    
+    logging.debug("Keywords retrieved successfully.")
+    return keywords
+ 
+# this needs fixing
+def everything():
+  logging.info("get everything")
+  command = "select * from snippets"
+  with connection, connection.cursor() as cursor:
+    cursor.execute(command)
+    alldata = cursor.fetchall()
+    
+  logging.debug("Got everything successfully")
+  return alldata
+
 def put(name, snippet):
     """Store a snippet with an associated name."""
     logging.info("Storing snippet {!r}: {!r}".format(name, snippet))
@@ -26,7 +47,7 @@ def put(name, snippet):
           connection.rollback()
           command = "update snippets set message=%s where keyword=%s"
           cursor.execute(command, (snippet, name))
-    
+
     connection.commit()
     logging.debug("Snippet stored successfully.")
     return name, snippet
@@ -59,7 +80,18 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
+    
+    # Subparser for the catalog command
+    logging.debug("Constructing catalog subparser")
 
+    catalog_parser = subparsers.add_parser("catalog", help="Catalog")
+
+    
+     # Subparser for the everything command
+    logging.debug("Constructing everything subparser")
+
+    everything_parser = subparsers.add_parser("everything", help="Store a snippet")
+    
     # Subparser for the put command
     logging.debug("Constructing put subparser")
 
@@ -89,6 +121,14 @@ def main():
     elif command == "get":
         snippet = get(**arguments)
         print("Retrieved snippet: {!r}".format(snippet))
+    elif command == "catalog":
+        keywords = catalog(**arguments)
+        print("Retrieved catalog: {!r}".format(keywords))
+    elif command == "everything":
+        alldata = everything(**arguments)
+        print("Retrieved all data: {!r}".format(alldata))
+        print type(alldata)
+
 
 
 
