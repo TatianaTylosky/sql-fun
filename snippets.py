@@ -10,6 +10,7 @@ logging.debug("Connecting to PostgreSQL")
 connection = psycopg2.connect("dbname='snippets' user='action' host='localhost'")
 logging.debug("Database connection established.")
 
+
 def catalog():
     logging.info("fetching catalog")
     command = "select keyword from snippets order by keyword"
@@ -31,11 +32,21 @@ def everything():
   logging.debug("Got everything successfully")
   return alldata
 
+
+def search(word):
+    logging.info("searching for {!r}".format(word))
+    with connection, connection.cursor() as cursor:
+        word = str(word)
+        command = "select * from snippets where keyword like (%s)"
+        cursor.execute(command, (word,))
+        results = cursor.fetchone()
+    
+    logging.debug("results retrieved successfully.")
+    return results
+
 def put(name, snippet):
     """Store a snippet with an associated name."""
-    logging.info("Storing snippet {!r}: {!r}".format(name, snippet))
-    command = "insert into snippets values (%s, %s)"
-    
+    logging.info("Storing snippet {!r}: {!r}".format(name, snippet))    
     
     with connection, connection.cursor() as cursor:
       cursor.execute("select message from snippets where keyword=%s", (name,))
@@ -100,6 +111,12 @@ def main():
     put_parser.add_argument("snippet", help="The snippet text")
     
     
+    # Subparser for the search command
+    logging.debug("Constructing search subparser")
+
+    search_parser = subparsers.add_parser("search", help="Store a snippet")
+    search_parser.add_argument("word", help="word to search for")    
+    
     # Subparser for the get command
     logging.debug("Constructing get subparser")
 
@@ -127,8 +144,9 @@ def main():
     elif command == "everything":
         alldata = everything(**arguments)
         print("Retrieved all data: {!r}".format(alldata))
-        print type(alldata)
-
+    elif command == "search":
+        results = search(**arguments)
+        print("Retrieved results data: {!r}".format(results))
 
 
 
